@@ -1,0 +1,314 @@
+.data 
+
+address: 	.asciiz "C:/Users/USER/Documents/ArquiProyectoFinal/data.231020221943"
+address2: 	.asciiz "C:/Users/USER/Documents/ArquiProyectoFinal/Parsing_Rules.config"
+
+buffer: 	.space	6000
+buffer2: 	.space	1000
+
+arregloIpPars: .space 500
+arregloUserPars: .space 500
+
+ipData: 	.space	1500
+usernameData: 	.space	1500 
+epochData: 	.space	1500 
+
+
+.text
+
+	######################################## lectura data ######################################
+	
+	
+	#Abrir archivo data
+	li 	$v0,13
+	la	$a0,address
+	li	$a1,0
+	li	$a2,0
+	syscall
+	
+	move	$t0,$v0
+	
+	#Leer archivo data
+	
+	li	$v0,14
+	move	$a0,$t0
+	la	$a1,buffer
+	move	$t2,$a1
+	li	$a2,6000
+	
+	syscall
+	
+	#Cerrar archivo
+	li	$v0,16
+	move	$a0,$t0
+	syscall	
+	
+	li $t3, 5300 #Contador Fin archivo
+	li $t4, 0 #Contador separardos datos 
+	
+	la $t6,ipData 
+	la $t7,usernameData 
+	la $t8,epochData
+	
+	j WHILE
+	
+WHILE: 	
+	li $t5,0 #Continuar al siguiente caracter
+	beq $t3,$zero,END
+	beq $s2,42,END 
+	
+	beq $t4,$zero,SEPARADOR1
+	beq $t4,1,SEPARADOR2
+	beq $t4,2,SEPARADOR3
+	
+	sub $t3,$t3,1
+	j WHILE
+
+SEPARADOR1:	
+	li $t4,1
+	beq $s2,42,END 
+	j IP
+IP:
+	lb $s2,($t2) #CARGAMOS BYTE DE t2 EN s2 DEPENDIENDO DEL ESPACIO DE MEMORIA DONDE ESTÉ
+	beq $s2,42,END 
+	beq $s2,39,EMPIEZAIP1 
+	addi $t2,$t2,1#AVANZAMOS UN ESPACIO DE MEMORIA DE s2 QUE ES EL "STRING" DE CONTNEIDO
+	j IP 
+	
+EMPIEZAIP1:  
+	beq $s2,42,END 
+	addi $t2,$t2,1
+	j EMPIEZAIP2
+EMPIEZAIP2:
+	beq $t5,14,WHILE 
+	lb $s2,($t2) #CARGAMOS BYTE DE t2 EN s2 DEPENDIENDO DEL ESPACIO DE MEMORIA DONDE ESTÉ
+	beq $s2,42,END 
+	beq $s2,124,EMPIEZAIP3 
+	sb $s2,($t6) #DE DONDE LO SACAMOS A DONDE LO SUBIMOS
+	addi $t2,$t2,1#AVANZAMOS UN ESPACIO DE MEMORIA DE s2 QUE ES EL "STRING" DE CONTNEIDO
+	addi $t6,$t6,1#AVANZAMOS UN ESPACIO DE MEMORIA DE t6 QUE ES EL ARREGLO EN QUE ESTAMOS GAURDANDO
+	add $t5,$t5,1
+	j EMPIEZAIP2
+EMPIEZAIP3:
+	beq $t5,14,WHILE  
+	addi $t6,$t6,1#AVANZAMOS UN ESPACIO DE MEMORIA DE t6 QUE ES EL ARREGLO EN QUE ESTAMOS GAURDANDO
+	add $t5,$t5,1
+	j EMPIEZAIP3
+
+SEPARADOR2:	
+	li $t4,2
+	beq $s2,42,END 
+	j USERNAME
+
+USERNAME:
+	lb $s2,($t2) #CARGAMOS BYTE DE t2 EN s2 DEPENDIENDO DEL ESPACIO DE MEMORIA DONDE ESTÉ
+	beq $s2,42,END 
+	beq $s2,39,EMPIEZAUSERNAME1 
+	addi $t2,$t2,1#AVANZAMOS UN ESPACIO DE MEMORIA DE s2 QUE ES EL "STRING" DE CONTNEIDO
+	j USERNAME
+
+EMPIEZAUSERNAME1: 
+	beq $s2,42,END 
+	addi $t2,$t2,1
+	j EMPIEZAUSERNAME2
+EMPIEZAUSERNAME2: 
+	beq $t5,14,WHILE
+	lb $s2,($t2) #CARGAMOS BYTE DE t2 EN s2 DEPENDIENDO DEL ESPACIO DE MEMORIA DONDE ESTÉ
+	beq $s2,42,END 
+	beq $s2,124,EMPIEZAUSERNAME3 
+	sb $s2,($t7) #DE DONDE LO SACAMOS A DONDE LO SUBIMOS
+	
+	addi $t2,$t2,1#AVANZAMOS UN ESPACIO DE MEMORIA DE s2 QUE ES EL "STRING" DE CONTNEIDO
+	addi $t7,$t7,1#AVANZAMOS UN ESPACIO DE MEMORIA DE t7 QUE ES EL ARREGLO EN QUE ESTAMOS GAURDANDO
+	add $t5,$t5,1
+	j EMPIEZAUSERNAME2
+EMPIEZAUSERNAME3:
+	beq $t5,14,WHILE  
+	addi $t7,$t7,1#AVANZAMOS UN ESPACIO DE MEMORIA DE t7 QUE ES EL ARREGLO EN QUE ESTAMOS GAURDANDO
+	add $t5,$t5,1
+	j EMPIEZAUSERNAME3
+SEPARADOR3:
+	beq $s2,42,END 
+	li $t4,0
+	j EPOCH
+EPOCH:
+	lb $s2,($t2) #CARGAMOS BYTE DE t2 EN s2 DEPENDIENDO DEL ESPACIO DE MEMORIA DONDE ESTÉ
+	beq $s2,39,EMPIEZAEPOCH1 
+	beq $s2,42,END 
+	addi $t2,$t2,1#AVANZAMOS UN ESPACIO DE MEMORIA DE s2 QUE ES EL "STRING" DE CONTNEIDO
+	j EPOCH
+EMPIEZAEPOCH1: 
+	beq $s2,42,END 
+	addi $t2,$t2,1
+	j EMPIEZAEPOCH2
+EMPIEZAEPOCH2:
+	beq $t5,14,EMPIEZAEPOCH4
+	lb $s2,($t2) #CARGAMOS BYTE DE t2 EN s2 DEPENDIENDO DEL ESPACIO DE MEMORIA DONDE ESTÉ
+	beq $s2,42,END 
+	beq $s2,39,EMPIEZAEPOCH3 
+	sb $s2,($t8) #DE DONDE LO SACAMOS A DONDE LO SUBIMOS
+	addi $t2,$t2,1#AVANZAMOS UN ESPACIO DE MEMORIA DE s2 QUE ES EL "STRING" DE CONTNEIDO
+	addi $t8,$t8,1#AVANZAMOS UN ESPACIO DE MEMORIA DE t8 QUE ES EL ARREGLO EN QUE ESTAMOS GAURDANDO
+	add $t5,$t5,1
+	j EMPIEZAEPOCH2
+EMPIEZAEPOCH3:
+	beq $t5,14,EMPIEZAEPOCH4  
+	addi $t8,$t8,1#AVANZAMOS UN ESPACIO DE MEMORIA DE t8 QUE ES EL ARREGLO EN QUE ESTAMOS GAURDANDO
+	add $t5,$t5,1
+	j EMPIEZAEPOCH3
+EMPIEZAEPOCH4:
+	beq $s2,42,END 
+	addi $t2,$t2,1
+	j WHILE
+END:
+		######################################## lectura Parsing ######################################
+	
+	li 	$v0,13
+	la	$a0,address2
+	li	$a1,0
+	li	$a2,0
+	syscall
+	
+	move	$t0,$v0
+	
+	##Leer archivo
+	
+	li	$v0,14
+	move	$a0,$t0
+	la	$a1,buffer2
+	li	$a2,1000
+	la	$t2,($a1)
+	
+	syscall
+	
+	li	$v0,16
+	move	$a0,$t0
+	syscall	
+	
+	######################################## Tokenizar lista de alertas ######################################
+	la $t8,($t2)
+	li $t7,0
+	#PRIMERO REALIZAR CICLO PARA CONTAR LA CANTIDAD DE COMAS EN LA PARTE IP'S, LO QUE INDICARA LA CANTIDAD DE VECES A REALIZAR DEL PROXIMO CICLO
+	CicloCantIp:
+	addi $t8,$t8,1#AVANZAMOS UN ESPACIO DE MEMORIA DE t8 QUE ES EL "STRING" DE CONTNEIDO
+	lb $t9,($t8)
+	beq $t9,44,SumarCantidad#SI ES IGUAL A "," IR A SUMAR 1
+	Continua:
+	bne $t9,10,CicloCantIp
+	
+	#t7 ES LA CANTIDAD TOTAL DE IP'S
+	
+	
+	
+	la $t3,arregloIpPars#CARGAMOS LA DIRECCION DE MEMORIA DEL ARREGLO A LLENAR DE IP'S
+	#li $t6,0
+	
+	#CICLO PARA LLENAR EL ARREGLO DE IP'S
+	addi $t2,$t2,3#AVANZAMOS TRES ESPACIOS DE MEMORIA DE s3 QUE ES EL "STRING" DE CONTNEIDO PARA EMPEZAR A LEER LAS DIRECCIONES EN VEZ DE "IP:"
+	li $t9,0#CONTADOR QUE REVISA CUANTOS ESPACIOS DE MEMORIA SE HAN UTILIZADO, PARA CUANDO ENCUENTRE UNA COMA COMPLETAR LOS 15
+	CicloLlenadoIp:
+	
+	
+	lb $s2,($t2) #CARGAMOS BYTE DE t2 EN s2 DEPENDIENDO DEL ESPACIO DE MEMORIA DONDE ESTÉ
+	
+	beq $s2,44,LlenarConEspacio#EVALUA SI ES UNA COMA
+	beq $s2,13,RomperCiclo#EVALUA SI ES UN SALTO DE LINEA
+	
+	sb $s2,($t3) #DE DONDE LO SACAMOS A DONDE LO SUBIMOS
+	addi $t9,$t9,1#SUMA CADA VEZ QUE SE UTILIZA UN SLOT DE MEMORIA
+	
+	addi $t2,$t2,1#AVANZAMOS UN ESPACIO DE MEMORIA DE s3 QUE ES EL "STRING" DE CONTNEIDO
+	addi $t3,$t3,1#AVANZAMOS UN ESPACIO DE MEMORIA DE t3 QUE ES EL ARREGLO EN QUE ESTAMOS GAURDANDO
+	
+	Continua2:
+	lb $s2,($t2)
+	RomperCiclo:
+	bne $s2,13,CicloLlenadoIp
+	
+	
+	
+	
+	
+	
+	la $t4,arregloUserPars#CARGAMOS LA DIRECCION DE MEMORIA DEL ARREGLO A LLENAR DE USERNAMES
+	
+	#CICLO PARA LLENAR EL ARREGLO DE USERNAMES
+	addi $t2,$t2,11#AVANZAMOS DIEZ ESPACIOS DE MEMORIA DE s3 QUE ES EL "STRING" DE CONTNEIDO PARA EMPEZAR A LEER LAS DIRECCIONES EN VEZ DE "Username:"
+	li $t9,0#CONTADOR QUE REVISA CUANTOS ESPACIOS DE MEMORIA SE HAN UTILIZADO, PARA CUANDO ENCUENTRE UNA COMA COMPLETAR LOS 15
+	CicloLlenadoUsername:
+	
+	
+	lb $s2,($t2) #CARGAMOS BYTE DE t2 EN s2 DEPENDIENDO DEL ESPACIO DE MEMORIA DONDE ESTÉ
+	
+	beq $s2,44,LlenarConEspacio2#EVALUA SI ES UNA COMA
+	beq $s2,13,RomperCiclo2#EVALUA SI ES UN SALTO DE LINEA
+	
+	sb $s2,($t4) #DE DONDE LO SACAMOS A DONDE LO SUBIMOS
+	addi $t9,$t9,1#SUMA CADA VEZ QUE SE UTILIZA UN SLOT DE MEMORIA
+	
+	addi $t2,$t2,1#AVANZAMOS UN ESPACIO DE MEMORIA DE s3 QUE ES EL "STRING" DE CONTNEIDO
+	addi $t4,$t4,1#AVANZAMOS UN ESPACIO DE MEMORIA DE t3 QUE ES EL ARREGLO EN QUE ESTAMOS GAURDANDO
+	
+	Continua3:
+	lb $s2,($t2)
+	RomperCiclo2:
+	bne $s2,13,CicloLlenadoUsername
+	
+	
+	
+	
+	#FIN DEL PROGRAMA
+	li $v0,10
+		syscall
+	
+	
+	
+	
+	SumarCantidad:#Se encarga de ser un contador para determinar la cantidad de ip's a contar, abajo cuando se cumple la condicion de ser una coma, suamra 1
+	addi $t7,$t7,1
+	j Continua
+	
+	LlenarConEspacio:#CUANDO SE CUMPLA LA CONDICION LLENARA DE ESPACIOS PARA COMPLETAR LOS 15 SLOTS
+	beq $t9,15,IgnorarEspacio
+		CiclollenadoEspacio:
+		addi $t3,$t3,1#AVANZAMOS UN ESPACIO DE MEMORIA DE t3 QUE ES EL ARREGLO EN QUE ESTAMOS GAURDANDO, NO HAY QUE INSERTAR NADA SOLO SALTAR ESPACIOS
+		addi $t9,$t9,1#SUMARA HASTA LLEGAR A LO QUE FALTA PARA LLEGAR A 15 QUE ES EL ESPACIO MAX DE IP
+		blt $t9,15,CiclollenadoEspacio
+		
+		addi $t2,$t2,1#AVANZAMOS UN ESPACIO DE MEMORIA DE s3 QUE ES EL "STRING" DE CONTNEIDO
+		
+		li $t9,0
+		j Continua2
+		
+		
+			IgnorarEspacio:
+			addi $t2,$t2,1#AVANZAMOS UN ESPACIO DE MEMORIA DE s3 QUE ES EL "STRING" DE CONTNEIDO
+		
+			li $t9,0
+			j Continua2
+			
+			
+			
+			
+	
+	
+	#PARA OPERAR USERNAMES
+	
+	LlenarConEspacio2:#CUANDO SE CUMPLA LA CONDICION LLENARA DE ESPACIOS PARA COMPLETAR LOS 15 SLOTS
+	beq $t9,15,IgnorarEspacio2
+		CiclollenadoEspacio2:
+		addi $t4,$t4,1#AVANZAMOS UN ESPACIO DE MEMORIA DE t3 QUE ES EL ARREGLO EN QUE ESTAMOS GAURDANDO, NO HAY QUE INSERTAR NADA SOLO SALTAR ESPACIOS
+		addi $t9,$t9,1#SUMARA HASTA LLEGAR A LO QUE FALTA PARA LLEGAR A 15 QUE ES EL ESPACIO MAX DE IP
+		blt $t9,15,CiclollenadoEspacio2
+		
+		addi $t2,$t2,1#AVANZAMOS UN ESPACIO DE MEMORIA DE s3 QUE ES EL "STRING" DE CONTNEIDO
+		
+		li $t9,0
+		j Continua3
+		
+		
+			IgnorarEspacio2:
+			addi $t2,$t2,1#AVANZAMOS UN ESPACIO DE MEMORIA DE s3 QUE ES EL "STRING" DE CONTNEIDO
+		
+			li $t9,0
+			j Continua3
